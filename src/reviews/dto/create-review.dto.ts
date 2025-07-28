@@ -1,5 +1,5 @@
 export class CreateReviewDto {
-  content: string
-  rating: number
-  festivalId: number
+  festivalId: number;
+  rating: number;
+  content: string;
 }
