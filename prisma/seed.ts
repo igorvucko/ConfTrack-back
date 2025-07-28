@@ -34,14 +34,14 @@ endDate: faker.date.future({ years: 1 }),
     const festival = faker.helpers.arrayElement(festivals)
 
 await prisma.review.create({
-      data: {
-        content: faker.lorem.sentences(2),
-rating: faker.number.int({ min: 1, max: 5 }),
-userId: user.id,
-festivalId: festival.id,
-      },
-    })
-  }
+  data: {
+    rating: faker.number.int({ min: 1, max: 5 }),
+    content: faker.lorem.sentences(2),
+    festivalId: 1,
+    userId: 1,
+  },
+});
+}
 
   console.log('✅ Seed complete!')
 }
