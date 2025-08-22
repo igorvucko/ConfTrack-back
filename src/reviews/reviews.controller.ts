@@ -1,34 +1,21 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Param,
-  UseGuards,
-  Request,
-  ParseIntPipe,
-} from '@nestjs/common'
-import { ReviewsService } from './reviews.service'
-import { CreateReviewDto } from './dto/create-review.dto'
-import { JwtAuthGuard } from 'src/auth/jwt-auth.guard'
+import { Controller, Post, Body, Get, Param, ParseIntPipe } from '@nestjs/common';
+import { ReviewsService } from './reviews.service';
+import { CreateReviewDto } from './dto/create-review.dto';
 
-@Controller()
+@Controller('reviews')
 export class ReviewsController {
   constructor(private readonly reviewsService: ReviewsService) {}
 
-  @UseGuards(JwtAuthGuard)
-  @Post('reviews')
-  create(@Request() req, @Body() dto: CreateReviewDto) {
-    return this.reviewsService.create(req.user.userId, dto)
+
+  @Post()
+  create(@Body() dto: CreateReviewDto) {
+
+    return this.reviewsService.createReview(dto);
   }
 
-  @Get('reviews')
-  findAll() {
-    return this.reviewsService.findAll()
-  }
 
-  @Get('festivals/:id/reviews')
-  findByFestival(@Param('id', ParseIntPipe) id: number) {
-    return this.reviewsService.findByFestival(id)
+  @Get('festival/:festivalId')
+  getByFestival(@Param('festivalId', ParseIntPipe) festivalId: number) {
+    return this.reviewsService.getReviewsByFestival(festivalId);
   }
 }

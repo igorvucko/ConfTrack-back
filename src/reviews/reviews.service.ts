@@ -1,14 +1,13 @@
-
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { PrismaService } from 'prisma/prisma.sevice';
+import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateReviewDto } from './dto/create-review.dto';
 
 @Injectable()
 export class ReviewsService {
   constructor(private prisma: PrismaService) {}
 
-  // Kreiranje nove recenzije
-  async createReview(dto: CreateReviewDto, userId: number) {
+
+  async createReview(dto: CreateReviewDto) {
     const festival = await this.prisma.festival.findUnique({
       where: { id: dto.festivalId },
     });
@@ -22,16 +21,24 @@ export class ReviewsService {
         rating: dto.rating,
         content: dto.content,
         festivalId: dto.festivalId,
-        userId: userId,
+        userId: dto.userId,
       },
     });
   }
 
-  // Dohvat recenzija za festival
+
   async getReviewsByFestival(festivalId: number) {
     return this.prisma.review.findMany({
       where: { festivalId },
-      include: { user: true },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          }
+        }
+      },
       orderBy: { createdAt: 'desc' },
     });
   }

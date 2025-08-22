@@ -1,40 +1,73 @@
-import { Injectable, UnauthorizedException, ConflictException } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
-import { PrismaService } from 'prisma/prisma.sevice';
+import { Injectable, ConflictException, UnauthorizedException } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
-import { jwtConstants } from './constants';
+import { PrismaService } from 'src/prisma/prisma.service';
+import { LoginDto } from './dto/login.dto';
+import { RegisterDto } from './dto/register.dto';
 
 @Injectable()
 export class AuthService {
-  constructor(
-    private prisma: PrismaService,
-    private jwtService: JwtService,
-  ) {}
+  constructor(private prisma: PrismaService) {}
 
-  async register(email: string, password: string, name?: string) {
-    const existingUser = await this.prisma.user.findUnique({ where: { email } });
-    if (existingUser) throw new ConflictException('Email already registered');
+  async register(dto: RegisterDto) {
 
-    const hashed = await bcrypt.hash(password, 10);
-    const user = await this.prisma.user.create({
-      data: { email, password: hashed, name },
+    const existingUser = await this.prisma.user.findUnique({
+      where: { email: dto.email },
     });
 
-    return { token: this.generateToken(user), user };
+    if (existingUser) {
+      throw new ConflictException('User with this email already exists');
+    }
+
+
+    const hashedPassword = await bcrypt.hash(dto.password, 12);
+
+
+    const user = await this.prisma.user.create({
+      data: {
+        email: dto.email,
+        password: hashedPassword,
+        name: dto.name,
+      },
+    });
+
+
+    const { password, ...result } = user;
+    return result;
   }
 
-  async login(email: string, password: string) {
-    const user = await this.prisma.user.findUnique({ where: { email } });
-    if (!user || !(await bcrypt.compare(password, user.password))) {
+  async validateUser(dto: LoginDto) {
+    const user = await this.prisma.user.findUnique({
+      where: { email: dto.email },
+    });
+
+    if (user && await bcrypt.compare(dto.password, user.password)) {
+      const { password, ...result } = user;
+      return result;
+    }
+
+    return null;
+  }
+
+  async login(dto: LoginDto) {
+    const user = await this.validateUser(dto);
+
+    if (!user) {
       throw new UnauthorizedException('Invalid credentials');
     }
-    return { token: this.generateToken(user), user };
+
+    return user;
   }
 
-  generateToken(user: any) {
-    return this.jwtService.sign(
-      { sub: user.id, email: user.email },
-      { secret: jwtConstants.secret }, // koristi jwtConstants
-    );
+  async findById(id: number) {
+    const user = await this.prisma.user.findUnique({
+      where: { id },
+    });
+
+    if (user) {
+      const { password, ...result } = user;
+      return result;
+    }
+
+    return null;
   }
 }
