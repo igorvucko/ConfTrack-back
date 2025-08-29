@@ -1,62 +1,54 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, User, Festival } from '@prisma/client';
 import { faker } from '@faker-js/faker';
 import * as bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
 
-
-interface SeedUser {
-  id: number;
-  email: string;
-  password: string;
-  name: string | null;
-}
-
-
-interface SeedFestival {
-  id: number;
-  name: string;
-  location: string;
-  startDate: Date;
-  endDate: Date;
-}
-
 async function main() {
+  console.log('Starting seed process...');
 
+  // Clear existing data
   await prisma.review.deleteMany();
   await prisma.festival.deleteMany();
   await prisma.user.deleteMany();
 
+  console.log('Cleared existing data');
 
-  const users: SeedUser[] = [];
+  // Create users with explicit typing
+  const users: User[] = [];
   for (let i = 0; i < 5; i++) {
-    const hashedPassword = await bcrypt.hash('password123', 12); // Using a fixed password for testing
+    const hashedPassword = await bcrypt.hash('password123', 12);
     const user = await prisma.user.create({
       data: {
         email: faker.internet.email(),
         password: hashedPassword,
         name: faker.person.fullName(),
+        isVerified: true,
       },
     });
     users.push(user);
   }
 
+  console.log(`Created ${users.length} users`);
 
-  const festivals: SeedFestival[] = [];
-  for (let i = 0; i < 5; i++) {
+  // Create festivals with explicit typing
+  const festivals: Festival[] = [];
+  for (let i = 0; i < 10; i++) {
     const festival = await prisma.festival.create({
       data: {
         name: `${faker.music.genre()} Festival`,
         location: faker.location.city(),
-        startDate: faker.date.future(),
-        endDate: faker.date.future({ years: 1 }),
+        startDate: faker.date.soon({ days: 30 }),
+        endDate: faker.date.soon({ days: 35 }),
       },
     });
     festivals.push(festival);
   }
 
+  console.log(`Created ${festivals.length} festivals`);
 
-  for (let i = 0; i < 10; i++) {
+  // Create reviews
+  for (let i = 0; i < 20; i++) {
     const user = users[Math.floor(Math.random() * users.length)];
     const festival = festivals[Math.floor(Math.random() * festivals.length)];
 
@@ -70,12 +62,13 @@ async function main() {
     });
   }
 
-  console.log('✅ Seed complete!');
+  console.log('Created 20 reviews');
+  console.log('Seed completed successfully!');
 }
 
 main()
   .catch((e) => {
-    console.error('❌ Seed failed:', e);
+    console.error('Seed failed:', e);
     process.exit(1);
   })
   .finally(async () => {
