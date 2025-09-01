@@ -1,15 +1,25 @@
-import { Injectable, ConflictException, UnauthorizedException, BadRequestException } from '@nestjs/common';
-import * as bcrypt from 'bcrypt';
+import { Injectable, UnauthorizedException, BadRequestException, ConflictException } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
 import * as crypto from 'crypto';
 import { PrismaService } from 'prisma/prisma.service';
 import { MailService } from '../mail/mail.service';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
+import { PasswordService } from './password.service';
+
+interface VerificationTokenPayload {
+  email: string;
+  sub: string;
+  iat?: number;
+  exp?: number;
+}
 
 @Injectable()
 export class AuthService {
   constructor(
     private prisma: PrismaService,
+    private jwtService: JwtService,
+    private passwordService: PasswordService,
     private mailService: MailService,
   ) {}
 
@@ -24,10 +34,14 @@ export class AuthService {
     }
 
     // Hash password
-    const hashedPassword = await bcrypt.hash(dto.password, 12);
+    const hashedPassword = await this.passwordService.hashPassword(dto.password);
+
+    // Set expiration for verification (15 minutes)
+    const emailVerificationExpires = new Date();
+    emailVerificationExpires.setMinutes(emailVerificationExpires.getMinutes() + 15);
 
     // Generate verification token
-    // const verificationToken = crypto.randomBytes(32).toString('hex');
+    const emailVerificationToken = this.generateVerificationToken(dto.email);
 
     // Create user
     const user = await this.prisma.user.create({
@@ -35,38 +49,88 @@ export class AuthService {
         email: dto.email,
         password: hashedPassword,
         name: dto.name,
-       // verificationToken,
+        isEmailVerified: false,
+        emailVerificationToken,
+        emailVerificationExpires,
       },
     });
 
     // Send verification email
-   // await this.mailService.sendVerificationEmail(user.email, verificationToken, user.name || user.email);
+    try {
+      await this.mailService.sendVerificationEmail(
+        user.email,
+        emailVerificationToken,
+        user.name || user.email
+      );
+    } catch (error) {
+      console.error('Failed to send verification email:', error);
+      // Don't throw error - we'll just log it for now
+    }
 
     // Remove sensitive data from response
-    const { password, verificationToken: _, ...result } = user;
-    return result;
+    const { password, emailVerificationToken: _, ...result } = user;
+    return { message: 'Please check your email for verification link' };
   }
 
- // async verifyEmail(token: string) {
-   // const user = await this.prisma.user.findUnique({
-  //    where: { verificationToken: token },
- //   });
+  async verifyEmail(token: string): Promise<{ accessToken: string; user: any }> {
+    try {
+      // Verify the token
+      const decoded = this.jwtService.verify<VerificationTokenPayload>(token);
 
-  //  if (!user) {
-  //    throw new BadRequestException('Invalid verification token');
-   // }
+      const user = await this.prisma.user.findUnique({
+        where: { email: decoded.email },
+      });
 
-    // Update user to mark as verified and remove verification token
-   // await this.prisma.user.update({
-     // where: { id: user.id },
-    //  data: {
-     //   isVerified: true,
-     //   verificationToken: null,
-    //  },
-   // });
+      if (!user) {
+        throw new UnauthorizedException('Invalid token');
+      }
 
-   // return { message: 'Email verified successfully' };
-  //}
+      // Check if already verified
+      if (user.isEmailVerified) {
+        throw new BadRequestException('Email already verified');
+      }
+
+      // Check if verification expired
+      if (user.emailVerificationExpires && user.emailVerificationExpires < new Date()) {
+        // Clean up the unverified user account
+        await this.prisma.user.delete({
+          where: { id: user.id },
+        });
+        throw new UnauthorizedException('Verification link has expired. Please sign up again.');
+      }
+
+      // Check if token matches
+      if (user.emailVerificationToken !== token) {
+        throw new UnauthorizedException('Invalid verification token');
+      }
+
+      // Mark email as verified and clear verification fields
+      const updatedUser = await this.prisma.user.update({
+        where: { id: user.id },
+        data: {
+          isEmailVerified: true,
+          emailVerificationToken: null,
+          emailVerificationExpires: null,
+        },
+      });
+
+      // Generate access token
+      const accessToken = this.generateAccessToken(updatedUser);
+
+      // Remove sensitive data
+      const { password, emailVerificationToken, ...userWithoutSensitiveData } = updatedUser;
+
+      return { accessToken, user: userWithoutSensitiveData };
+    } catch (error) {
+      if (error.name === 'TokenExpiredError') {
+        throw new UnauthorizedException('Verification token has expired');
+      }
+      if (error.name === 'JsonWebTokenError') {
+        throw new UnauthorizedException('Invalid verification token');
+      }
+      throw error;
+    }
+  }
 
   async validateUser(dto: LoginDto) {
     const user = await this.prisma.user.findUnique({
@@ -74,27 +138,33 @@ export class AuthService {
     });
 
     if (!user) {
-      throw new UnauthorizedException('Invalid credentials');
+      throw new UnauthorizedException('Invalid email or password');
     }
 
-    // Check if user is verified
-    //if (!user.isVerified) {
-    //  throw new UnauthorizedException('Please verify your email address before logging in');
-    //}
-
-    const isPasswordValid = await bcrypt.compare(dto.password, user.password);
+    // Verify password
+    const isPasswordValid = await this.passwordService.verifyPassword(
+      dto.password,
+      user.password,
+    );
 
     if (!isPasswordValid) {
-      throw new UnauthorizedException('Invalid credentials');
+      throw new UnauthorizedException('Invalid email or password');
     }
 
-    const { password, verificationToken, resetToken, resetTokenExpiry, ...result } = user;
+    // Don't let unverified users log in
+    if (!user.isEmailVerified) {
+      throw new UnauthorizedException('Please verify your email address before logging in.');
+    }
+
+    // Remove sensitive data
+    const { password, emailVerificationToken, resetToken, resetTokenExpiry, ...result } = user;
     return result;
   }
 
   async login(dto: LoginDto) {
     const user = await this.validateUser(dto);
-    return user;
+    const accessToken = this.generateAccessToken(user);
+    return { accessToken, user };
   }
 
   async findById(id: number) {
@@ -103,10 +173,21 @@ export class AuthService {
     });
 
     if (user) {
-      const { password, verificationToken, resetToken, resetTokenExpiry, ...result } = user;
+      const { password, emailVerificationToken, resetToken, resetTokenExpiry, ...result } = user;
       return result;
     }
 
     return null;
+  }
+
+  private generateAccessToken(user: any): string {
+    const payload = { email: user.email, sub: user.id };
+    return this.jwtService.sign(payload);
+  }
+
+  private generateVerificationToken(email: string): string {
+    const payload = { email };
+    // Verification tokens are short-lived (15 minutes)
+    return this.jwtService.sign(payload, { expiresIn: '15m' });
   }
 }

@@ -7,14 +7,14 @@ const prisma = new PrismaClient();
 async function main() {
   console.log('Starting seed process...');
 
-  // Clear existing data
+
   await prisma.review.deleteMany();
   await prisma.festival.deleteMany();
   await prisma.user.deleteMany();
 
   console.log('Cleared existing data');
 
-  // Create users with explicit typing
+
   const users: User[] = [];
   for (let i = 0; i < 5; i++) {
     const hashedPassword = await bcrypt.hash('password123', 12);
@@ -23,7 +23,7 @@ async function main() {
         email: faker.internet.email(),
         password: hashedPassword,
         name: faker.person.fullName(),
-        isVerified: true,
+        isEmailVerified: true,
       },
     });
     users.push(user);
@@ -31,7 +31,7 @@ async function main() {
 
   console.log(`Created ${users.length} users`);
 
-  // Create festivals with explicit typing
+
   const festivals: Festival[] = [];
   for (let i = 0; i < 10; i++) {
     const festival = await prisma.festival.create({
@@ -47,7 +47,7 @@ async function main() {
 
   console.log(`Created ${festivals.length} festivals`);
 
-  // Create reviews
+
   for (let i = 0; i < 20; i++) {
     const user = users[Math.floor(Math.random() * users.length)];
     const festival = festivals[Math.floor(Math.random() * festivals.length)];
