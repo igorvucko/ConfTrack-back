@@ -7,8 +7,11 @@ export default () => ({
     password: process.env.SMTP_PASSWORD,
   },
   jwt: {
-    secret: process.env.JWT_SECRET || 'your-secret-key',
+    secret: process.env.JWT_SECRET ,
     expiresIn: process.env.JWT_EXPIRES_IN || '24h',
+  },
+    database: {
+    url: process.env.DATABASE_URL,
   },
 
 });

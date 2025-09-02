@@ -24,7 +24,7 @@ export class AuthService {
   ) {}
 
   async register(dto: RegisterDto) {
-    // Check if user already exists
+
     const existingUser = await this.prisma.user.findUnique({
       where: { email: dto.email },
     });
@@ -33,17 +33,17 @@ export class AuthService {
       throw new ConflictException('User with this email already exists');
     }
 
-    // Hash password
+
     const hashedPassword = await this.passwordService.hashPassword(dto.password);
 
-    // Set expiration for verification (15 minutes)
+
     const emailVerificationExpires = new Date();
     emailVerificationExpires.setMinutes(emailVerificationExpires.getMinutes() + 15);
 
-    // Generate verification token
+
     const emailVerificationToken = this.generateVerificationToken(dto.email);
 
-    // Create user
+
     const user = await this.prisma.user.create({
       data: {
         email: dto.email,
@@ -55,7 +55,7 @@ export class AuthService {
       },
     });
 
-    // Send verification email
+
     try {
       await this.mailService.sendVerificationEmail(
         user.email,
@@ -64,17 +64,17 @@ export class AuthService {
       );
     } catch (error) {
       console.error('Failed to send verification email:', error);
-      // Don't throw error - we'll just log it for now
+
     }
 
-    // Remove sensitive data from response
+
     const { password, emailVerificationToken: _, ...result } = user;
     return { message: 'Please check your email for verification link' };
   }
 
   async verifyEmail(token: string): Promise<{ accessToken: string; user: any }> {
     try {
-      // Verify the token
+
       const decoded = this.jwtService.verify<VerificationTokenPayload>(token);
 
       const user = await this.prisma.user.findUnique({
@@ -85,26 +85,26 @@ export class AuthService {
         throw new UnauthorizedException('Invalid token');
       }
 
-      // Check if already verified
+
       if (user.isEmailVerified) {
         throw new BadRequestException('Email already verified');
       }
 
-      // Check if verification expired
+
       if (user.emailVerificationExpires && user.emailVerificationExpires < new Date()) {
-        // Clean up the unverified user account
+
         await this.prisma.user.delete({
           where: { id: user.id },
         });
         throw new UnauthorizedException('Verification link has expired. Please sign up again.');
       }
 
-      // Check if token matches
+
       if (user.emailVerificationToken !== token) {
         throw new UnauthorizedException('Invalid verification token');
       }
 
-      // Mark email as verified and clear verification fields
+
       const updatedUser = await this.prisma.user.update({
         where: { id: user.id },
         data: {
@@ -114,10 +114,10 @@ export class AuthService {
         },
       });
 
-      // Generate access token
+
       const accessToken = this.generateAccessToken(updatedUser);
 
-      // Remove sensitive data
+
       const { password, emailVerificationToken, ...userWithoutSensitiveData } = updatedUser;
 
       return { accessToken, user: userWithoutSensitiveData };
@@ -141,7 +141,7 @@ export class AuthService {
       throw new UnauthorizedException('Invalid email or password');
     }
 
-    // Verify password
+
     const isPasswordValid = await this.passwordService.verifyPassword(
       dto.password,
       user.password,
@@ -151,12 +151,12 @@ export class AuthService {
       throw new UnauthorizedException('Invalid email or password');
     }
 
-    // Don't let unverified users log in
+
     if (!user.isEmailVerified) {
       throw new UnauthorizedException('Please verify your email address before logging in.');
     }
 
-    // Remove sensitive data
+
     const { password, emailVerificationToken, resetToken, resetTokenExpiry, ...result } = user;
     return result;
   }
@@ -187,7 +187,7 @@ export class AuthService {
 
   private generateVerificationToken(email: string): string {
     const payload = { email };
-    // Verification tokens are short-lived (15 minutes)
+
     return this.jwtService.sign(payload, { expiresIn: '15m' });
   }
 }
