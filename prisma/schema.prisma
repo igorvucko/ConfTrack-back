@@ -15,8 +15,6 @@ model User {
   isEmailVerified          Boolean  @default(false)
   emailVerificationToken   String?  @unique
   emailVerificationExpires DateTime?
-  resetToken               String?  @unique
-  resetTokenExpiry         DateTime?
   reviews                  Review[]
   createdAt                DateTime @default(now())
 }

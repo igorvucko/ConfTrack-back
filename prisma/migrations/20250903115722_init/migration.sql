@@ -4,10 +4,9 @@ CREATE TABLE "User" (
     "email" TEXT NOT NULL,
     "password" TEXT NOT NULL,
     "name" TEXT,
-    "isVerified" BOOLEAN NOT NULL DEFAULT false,
-    "verificationToken" TEXT,
-    "resetToken" TEXT,
-    "resetTokenExpiry" TIMESTAMP(3),
+    "isEmailVerified" BOOLEAN NOT NULL DEFAULT false,
+    "emailVerificationToken" TEXT,
+    "emailVerificationExpires" TIMESTAMP(3),
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "User_pkey" PRIMARY KEY ("id")
@@ -41,10 +40,7 @@ CREATE TABLE "Review" (
 CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "User_verificationToken_key" ON "User"("verificationToken");
-
--- CreateIndex
-CREATE UNIQUE INDEX "User_resetToken_key" ON "User"("resetToken");
+CREATE UNIQUE INDEX "User_emailVerificationToken_key" ON "User"("emailVerificationToken");
 
 -- AddForeignKey
 ALTER TABLE "Review" ADD CONSTRAINT "Review_festivalId_fkey" FOREIGN KEY ("festivalId") REFERENCES "Festival"("id") ON DELETE CASCADE ON UPDATE CASCADE;

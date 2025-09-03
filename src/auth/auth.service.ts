@@ -157,7 +157,7 @@ export class AuthService {
     }
 
 
-    const { password, emailVerificationToken, resetToken, resetTokenExpiry, ...result } = user;
+    const { password, emailVerificationToken, ...result } = user;
     return result;
   }
 
@@ -173,7 +173,7 @@ export class AuthService {
     });
 
     if (user) {
-      const { password, emailVerificationToken, resetToken, resetTokenExpiry, ...result } = user;
+      const { password, emailVerificationToken, ...result } = user;
       return result;
     }
 

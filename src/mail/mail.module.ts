@@ -7,6 +7,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 
 @Module({
   imports: [
+    ConfigModule,
     MailerModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
@@ -20,10 +21,11 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
           },
         },
         defaults: {
-          from: '"ITFinder" <noreply@itfinder.com>',
+          from: `"ITFinder" <${configService.get<string>('SMTP_USER')}>`,
         },
         template: {
-          dir: join(__dirname, 'templates'),
+
+          dir: join(process.cwd(), 'src', 'mail', 'templates'),
           adapter: new HandlebarsAdapter(),
           options: {
             strict: true,
