@@ -4,38 +4,86 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url = env("DATABASE_URL")
+  url      = env("DATABASE_URL")
 }
 
 model User {
-  id                       Int      @id @default(autoincrement())
-  email                    String   @unique
+  id                       Int        @id @default(autoincrement())
+  email                    String     @unique
   password                 String
   name                     String?
-  isEmailVerified          Boolean  @default(false)
-  emailVerificationToken   String?  @unique
+  isEmailVerified          Boolean    @default(false)
+  emailVerificationToken   String?    @unique
   emailVerificationExpires DateTime?
-  reviews                  Review[]
-  createdAt                DateTime @default(now())
+  reviews                  Review[]   // User can write reviews
+  likes                    Like[]     // User can like reviews/posts
+  comments                 Comment[]  // User can comment on reviews/posts
+  posts                    Post[]     // User can create posts
+  createdAt                DateTime   @default(now())
 }
 
-model Festival {
-  id Int @id @default(autoincrement())
-  name String
-  location String
-  startDate DateTime
-  endDate DateTime
-  reviews Review[]
+model Conference {
+  id          Int      @id @default(autoincrement())
+  name        String
+  description String?
+  location    String
+  startDate   DateTime
+  endDate     DateTime
+  website     String?
+  tags        String[] // e.g., ["AI", "Machine Learning", "Neuroscience"]
+  reviews     Review[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Post {
+  id        Int       @id @default(autoincrement())
+  title     String
+  content   String
+  author    User      @relation(fields: [authorId], references: [id])
+  authorId  Int
+  likes     Like[]
+  comments  Comment[]
+  tags      String[] // e.g., #AI, #QuantumComputing, #BioTech
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model Like {
+  id       Int      @id @default(autoincrement())
+  review   Review?  @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  reviewId Int?
+  post     Post?    @relation(fields: [postId], references: [id], onDelete: Cascade)
+  postId   Int?
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId   Int
+  createdAt DateTime @default(now())
+  // Ensure a like is for either a review OR a post, but not both
+  @@unique([reviewId, userId])
+  @@unique([postId, userId])
+}
+
+model Comment {
+  id        Int      @id @default(autoincrement())
+  content   String
+  review    Review?  @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  reviewId  Int?
+  post      Post?    @relation(fields: [postId], references: [id], onDelete: Cascade)
+  postId    Int?
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  authorId  Int
   createdAt DateTime @default(now())
 }
 
 model Review {
-  id Int @id @default(autoincrement())
-  rating Int
-  content String
-  festival Festival @relation(fields: [festivalId], references: [id], onDelete: Cascade)
-  festivalId Int
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId Int
-  createdAt DateTime @default(now())
+  id           Int       @id @default(autoincrement())
+  rating       Int
+  content      String
+  conference   Conference @relation(fields: [conferenceId], references: [id], onDelete: Cascade)
+  conferenceId Int
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId       Int
+  comments     Comment[] // Review has comments
+  likes        Like[]    // Review has likes
+  createdAt    DateTime  @default(now())
 }
