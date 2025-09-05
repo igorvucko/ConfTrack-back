@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
-import { FestivalsController } from './festivals.controller';
-import { FestivalsService } from './festivals.service';
+import { FestivalsController } from './conference.controller';
+import { FestivalsService } from './conference.service';
 
 @Module({
   controllers: [FestivalsController],

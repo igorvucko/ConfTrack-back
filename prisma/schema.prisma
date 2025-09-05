@@ -8,18 +8,20 @@ datasource db {
 }
 
 model User {
-  id                       Int        @id @default(autoincrement())
-  email                    String     @unique
+  id                       Int              @id @default(autoincrement())
+  email                    String           @unique
   password                 String
   name                     String?
-  isEmailVerified          Boolean    @default(false)
-  emailVerificationToken   String?    @unique
+  isEmailVerified          Boolean          @default(false)
+  emailVerificationToken   String?          @unique
   emailVerificationExpires DateTime?
-  reviews                  Review[]   // User can write reviews
-  likes                    Like[]     // User can like reviews/posts
-  comments                 Comment[]  // User can comment on reviews/posts
-  posts                    Post[]     // User can create posts
-  createdAt                DateTime   @default(now())
+  reviews                  Review[]
+  reviewLikes              ReviewLike[]
+  reviewComments           ReviewComment[]
+  posts                    Post[]
+  postLikes                PostLike[]
+  postComments             PostComment[]
+  createdAt                DateTime         @default(now())
 }
 
 model Conference {
@@ -30,60 +32,80 @@ model Conference {
   startDate   DateTime
   endDate     DateTime
   website     String?
-  tags        String[] // e.g., ["AI", "Machine Learning", "Neuroscience"]
+  tags        String[]
   reviews     Review[]
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
 
 model Post {
-  id        Int       @id @default(autoincrement())
-  title     String
-  content   String
-  author    User      @relation(fields: [authorId], references: [id])
-  authorId  Int
-  likes     Like[]
-  comments  Comment[]
-  tags      String[] // e.g., #AI, #QuantumComputing, #BioTech
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  id          Int           @id @default(autoincrement())
+  title       String
+  content     String
+  author      User          @relation(fields: [authorId], references: [id])
+  authorId    Int
+  likes       PostLike[]
+  comments    PostComment[]
+  tags        String[]
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
 }
 
-model Like {
-  id       Int      @id @default(autoincrement())
-  review   Review?  @relation(fields: [reviewId], references: [id], onDelete: Cascade)
-  reviewId Int?
-  post     Post?    @relation(fields: [postId], references: [id], onDelete: Cascade)
-  postId   Int?
-  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+// Separate like model for reviews
+model ReviewLike {
+  id       Int     @id @default(autoincrement())
+  review   Review  @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  reviewId Int
+  user     User    @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId   Int
   createdAt DateTime @default(now())
-  // Ensure a like is for either a review OR a post, but not both
+
   @@unique([reviewId, userId])
+}
+
+// Separate like model for posts
+model PostLike {
+  id       Int     @id @default(autoincrement())
+  post     Post    @relation(fields: [postId], references: [id], onDelete: Cascade)
+  postId   Int
+  user     User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId   Int
+  createdAt DateTime @default(now())
+
   @@unique([postId, userId])
 }
 
-model Comment {
+// Separate comment model for reviews
+model ReviewComment {
   id        Int      @id @default(autoincrement())
   content   String
-  review    Review?  @relation(fields: [reviewId], references: [id], onDelete: Cascade)
-  reviewId  Int?
-  post      Post?    @relation(fields: [postId], references: [id], onDelete: Cascade)
-  postId    Int?
+  review    Review   @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  reviewId  Int
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  authorId  Int
+  createdAt DateTime @default(now())
+}
+
+// Separate comment model for posts
+model PostComment {
+  id        Int      @id @default(autoincrement())
+  content   String
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  postId    Int
   author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
   authorId  Int
   createdAt DateTime @default(now())
 }
 
 model Review {
-  id           Int       @id @default(autoincrement())
+  id           Int             @id @default(autoincrement())
   rating       Int
   content      String
-  conference   Conference @relation(fields: [conferenceId], references: [id], onDelete: Cascade)
+  conference   Conference      @relation(fields: [conferenceId], references: [id], onDelete: Cascade)
   conferenceId Int
-  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user         User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId       Int
-  comments     Comment[] // Review has comments
-  likes        Like[]    // Review has likes
-  createdAt    DateTime  @default(now())
+  comments     ReviewComment[]
+  likes        ReviewLike[]
+  createdAt    DateTime        @default(now())
 }

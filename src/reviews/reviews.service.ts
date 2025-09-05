@@ -8,6 +8,8 @@ export class ReviewsService {
   constructor(private prisma: PrismaService) {}
 
   async create(createReviewDto: CreateReviewDto, userId: number) {
+
+
     return this.prisma.review.create({
       data: {
         ...createReviewDto,
@@ -37,7 +39,6 @@ export class ReviewsService {
       },
     });
   }
-
   async findAll() {
     return this.prisma.review.findMany({
       include: {
@@ -146,43 +147,40 @@ export class ReviewsService {
     });
   }
 
-     async likeReview(reviewId: number, userId: number) {
+  async likeReview(reviewId: number, userId: number) {
 
-    const existingLike = await this.prisma.like.findFirst({
+    const existingLike = await this.prisma.reviewLike.findFirst({
       where: {
         reviewId,
         userId,
       },
     });
-
     if (existingLike) {
 
-      await this.prisma.like.delete({
+      await this.prisma.reviewLike.delete({
         where: { id: existingLike.id },
       });
       return { liked: false };
     }
 
 
-    await this.prisma.like.create({
+    await this.prisma.reviewLike.create({
       data: {
         reviewId,
         userId,
-
       },
     });
 
     return { liked: true };
   }
 
-   async commentOnReview(reviewId: number, userId: number, content: string) {
+  async commentOnReview(reviewId: number, userId: number, content: string) {
 
-    return this.prisma.comment.create({
+    return this.prisma.reviewComment.create({
       data: {
         content,
         reviewId,
         authorId: userId,
-
       },
       include: {
         author: {

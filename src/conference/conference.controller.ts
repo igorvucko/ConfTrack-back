@@ -1,5 +1,5 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, ParseIntPipe } from '@nestjs/common'
-import { FestivalsService } from './festivals.service'
+import { FestivalsService } from './conference.service'
 import { CreateFestivalDto } from './dto/create-festival.dto'
 import { UpdateFestivalDto } from './dto/update-festival.dto'
 

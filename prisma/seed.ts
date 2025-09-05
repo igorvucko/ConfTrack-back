@@ -1,4 +1,4 @@
-import { PrismaClient, User, Festival } from '@prisma/client';
+import { PrismaClient, User, Conference} from '@prisma/client';
 import { faker } from '@faker-js/faker';
 import * as bcrypt from 'bcrypt';
 
@@ -9,7 +9,7 @@ async function main() {
 
 
   await prisma.review.deleteMany();
-  await prisma.festival.deleteMany();
+  await prisma.conference.deleteMany();
   await prisma.user.deleteMany();
 
   console.log('Cleared existing data');
@@ -32,31 +32,31 @@ async function main() {
   console.log(`Created ${users.length} users`);
 
 
-  const festivals: Festival[] = [];
+  const conferences: Conference[] = [];
   for (let i = 0; i < 10; i++) {
-    const festival = await prisma.festival.create({
+    const Conference = await prisma.conference.create({
       data: {
-        name: `${faker.music.genre()} Festival`,
+        name: `${faker.music.genre()} Conference`,
         location: faker.location.city(),
         startDate: faker.date.soon({ days: 30 }),
         endDate: faker.date.soon({ days: 35 }),
       },
     });
-    festivals.push(festival);
+    conferences.push(Conference);
   }
 
-  console.log(`Created ${festivals.length} festivals`);
+  console.log(`Created ${conferences.length} conference`);
 
 
   for (let i = 0; i < 20; i++) {
     const user = users[Math.floor(Math.random() * users.length)];
-    const festival = festivals[Math.floor(Math.random() * festivals.length)];
+    const conference = conferences[Math.floor(Math.random() * conferences.length)];
 
     await prisma.review.create({
       data: {
         rating: faker.number.int({ min: 1, max: 5 }),
         content: faker.lorem.sentences(2),
-        festivalId: festival.id,
+        conferenceId: conference.id,
         userId: user.id,
       },
     });

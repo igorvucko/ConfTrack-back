@@ -8,31 +8,31 @@ export class FestivalsService {
   constructor(private prisma: PrismaService) {}
 
   create(data: CreateFestivalDto) {
-    return this.prisma.festival.create({ data })
+    return this.prisma.conference.create({ data })
   }
 
   findAll() {
-    return this.prisma.festival.findMany()
+    return this.prisma.conference.findMany()
   }
 
   findOne(id: number) {
-    return this.prisma.festival.findUnique({ where: { id } })
+    return this.prisma.conference.findUnique({ where: { id } })
   }
 
   async update(id: number, data: UpdateFestivalDto) {
-    const festival = await this.prisma.festival.findUnique({ where: { id } })
+    const festival = await this.prisma.conference.findUnique({ where: { id } })
     if (!festival) throw new NotFoundException('Festival not found')
 
-    return this.prisma.festival.update({
+    return this.prisma.conference.update({
       where: { id },
       data,
     })
   }
 
   async remove(id: number) {
-    const festival = await this.prisma.festival.findUnique({ where: { id } })
+    const festival = await this.prisma.conference.findUnique({ where: { id } })
     if (!festival) throw new NotFoundException('Festival not found')
 
-    return this.prisma.festival.delete({ where: { id } })
+    return this.prisma.conference.delete({ where: { id } })
   }
 }
