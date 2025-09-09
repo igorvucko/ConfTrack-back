@@ -164,7 +164,14 @@ export class AuthService {
   async login(dto: LoginDto) {
     const user = await this.validateUser(dto);
     const accessToken = this.generateAccessToken(user);
-    return { accessToken, user };
+    return {
+      accessToken,
+      user:{
+        id:user.id,
+        email:user.email,
+        name:user.name
+      }
+    }
   }
 
   async findById(id: number) {
