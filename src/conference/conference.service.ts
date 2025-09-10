@@ -1,13 +1,13 @@
 import { Injectable, NotFoundException } from '@nestjs/common'
 import { PrismaService } from 'prisma/prisma.service'
-import { CreateFestivalDto } from './dto/create-festival.dto'
-import { UpdateFestivalDto } from './dto/update-festival.dto'
+import { CreateConferenceDto } from './dto/create-conference.dto'
+import { UpdateConferenceDto } from './dto/update-conference.dto'
 
 @Injectable()
-export class FestivalsService {
+export class ConferencesService {
   constructor(private prisma: PrismaService) {}
 
-  create(data: CreateFestivalDto) {
+  create(data: CreateConferenceDto) {
     return this.prisma.conference.create({ data })
   }
 
@@ -19,9 +19,9 @@ export class FestivalsService {
     return this.prisma.conference.findUnique({ where: { id } })
   }
 
-  async update(id: number, data: UpdateFestivalDto) {
-    const festival = await this.prisma.conference.findUnique({ where: { id } })
-    if (!festival) throw new NotFoundException('Festival not found')
+  async update(id: number, data: UpdateConferenceDto) {
+    const conference = await this.prisma.conference.findUnique({ where: { id } })
+    if (!conference) throw new NotFoundException('Conference not found')
 
     return this.prisma.conference.update({
       where: { id },
@@ -30,8 +30,8 @@ export class FestivalsService {
   }
 
   async remove(id: number) {
-    const festival = await this.prisma.conference.findUnique({ where: { id } })
-    if (!festival) throw new NotFoundException('Festival not found')
+    const conference = await this.prisma.conference.findUnique({ where: { id } })
+    if (!conference) throw new NotFoundException('Conference not found')
 
     return this.prisma.conference.delete({ where: { id } })
   }

@@ -1,34 +1,34 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, ParseIntPipe } from '@nestjs/common'
-import { FestivalsService } from './conference.service'
-import { CreateFestivalDto } from './dto/create-festival.dto'
-import { UpdateFestivalDto } from './dto/update-festival.dto'
+import { ConferencesService } from './conference.service'
+import { CreateConferenceDto } from './dto/create-conference.dto'
+import { UpdateConferenceDto } from './dto/update-conference.dto'
 
-@Controller('festivals')
-export class FestivalsController {
-  constructor(private readonly festivalsService: FestivalsService) {}
+@Controller('conferences')
+export class ConferencesController {
+  constructor(private readonly ConferencesService: ConferencesService) {}
 
   @Post()
-  create(@Body() dto: CreateFestivalDto) {
-    return this.festivalsService.create(dto)
+  create(@Body() dto: CreateConferenceDto) {
+    return this.ConferencesService.create(dto)
   }
 
   @Get()
   findAll() {
-    return this.festivalsService.findAll()
+    return this.ConferencesService.findAll()
   }
 
   @Get(':id')
   findOne(@Param('id', ParseIntPipe) id: number) {
-    return this.festivalsService.findOne(id)
+    return this.ConferencesService.findOne(id)
   }
 
   @Patch(':id')
-  update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateFestivalDto) {
-    return this.festivalsService.update(id, dto)
+  update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateConferenceDto) {
+    return this.ConferencesService.update(id, dto)
   }
 
   @Delete(':id')
   remove(@Param('id', ParseIntPipe) id: number) {
-    return this.festivalsService.remove(id)
+    return this.ConferencesService.remove(id)
   }
 }

@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { AuthModule } from './auth/auth.module';
-import { FestivalsModule } from './conference/conference.module';
+import { ConferencesModule } from './conference/conference.module';
 import { ReviewsModule } from './reviews/reviews.module';
 import { MailModule } from './mail/mail.module';
 
@@ -11,7 +11,7 @@ import { MailModule } from './mail/mail.module';
       isGlobal: true,
     }),
     AuthModule,
-    FestivalsModule,
+    ConferencesModule,
     ReviewsModule,
     MailModule,
   ],
