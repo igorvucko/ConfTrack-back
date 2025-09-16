@@ -8,8 +8,6 @@ export class ReviewsService {
   constructor(private prisma: PrismaService) {}
 
   async create(createReviewDto: CreateReviewDto, userId: number) {
-
-
     return this.prisma.review.create({
       data: {
         ...createReviewDto,
@@ -23,22 +21,16 @@ export class ReviewsService {
             email: true,
           },
         },
-        conference: true,
-        comments: {
-          include: {
-            author: {
-              select: {
-                id: true,
-                name: true,
-                email: true,
-              },
-            },
+        _count: {
+          select: {
+            likes: true,
+            comments: true,
           },
         },
-        likes: true,
       },
     });
   }
+
   async findAll() {
     return this.prisma.review.findMany({
       include: {
@@ -49,19 +41,39 @@ export class ReviewsService {
             email: true,
           },
         },
-        conference: true,
-        comments: {
-          include: {
-            author: {
-              select: {
-                id: true,
-                name: true,
-                email: true,
-              },
-            },
+        _count: {
+          select: {
+            likes: true,
+            comments: true,
           },
         },
-        likes: true,
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+  }
+
+  async findByConferenceId(conferenceId: number) {
+    return this.prisma.review.findMany({
+      where: { conferenceId },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+        _count: {
+          select: {
+            likes: true,
+            comments: true,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: 'desc',
       },
     });
   }
@@ -77,19 +89,12 @@ export class ReviewsService {
             email: true,
           },
         },
-        conference: true,
-        comments: {
-          include: {
-            author: {
-              select: {
-                id: true,
-                name: true,
-                email: true,
-              },
-            },
+        _count: {
+          select: {
+            likes: true,
+            comments: true,
           },
         },
-        likes: true,
       },
     });
 
@@ -118,19 +123,12 @@ export class ReviewsService {
             email: true,
           },
         },
-        conference: true,
-        comments: {
-          include: {
-            author: {
-              select: {
-                id: true,
-                name: true,
-                email: true,
-              },
-            },
+        _count: {
+          select: {
+            likes: true,
+            comments: true,
           },
         },
-        likes: true,
       },
     });
   }
@@ -148,7 +146,6 @@ export class ReviewsService {
   }
 
   async likeReview(reviewId: number, userId: number) {
-
     const existingLike = await this.prisma.reviewLike.findFirst({
       where: {
         reviewId,
@@ -156,13 +153,11 @@ export class ReviewsService {
       },
     });
     if (existingLike) {
-
       await this.prisma.reviewLike.delete({
         where: { id: existingLike.id },
       });
       return { liked: false };
     }
-
 
     await this.prisma.reviewLike.create({
       data: {
@@ -175,7 +170,6 @@ export class ReviewsService {
   }
 
   async commentOnReview(reviewId: number, userId: number, content: string) {
-
     return this.prisma.reviewComment.create({
       data: {
         content,

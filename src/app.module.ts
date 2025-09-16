@@ -4,12 +4,15 @@ import { AuthModule } from './auth/auth.module';
 import { ConferencesModule } from './conference/conference.module';
 import { ReviewsModule } from './reviews/reviews.module';
 import { MailModule } from './mail/mail.module';
+import { PrismaModule } from 'prisma/prisma.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
+      envFilePath: '.env',
     }),
+    PrismaModule,
     AuthModule,
     ConferencesModule,
     ReviewsModule,
